@@ -2,6 +2,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../models/event_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // ✅ needed for context.read
+import 'package:syncfusion_flutter_calendar/calendar.dart';
+import '../../../models/event_model.dart';
+import '../../../data/event_repository.dart'; // ✅ needed to fetch event by ID
+import '../new_event_page.dart'; // ✅ needed to navigate to NewEventPage
+import '../../../bloc/calendar/calendar_bloc.dart'; // ✅ to dispatch LoadEvents
+import '../../../bloc/calendar/calendar_event.dart'; // ✅ to use LoadEvents
+
 
 class DayView extends StatelessWidget {
   final List<EventModel> events;
@@ -49,11 +57,12 @@ class DayView extends StatelessWidget {
         startTime: e.start,
         endTime: e.end,
         subject: e.title,
+        notes: e.id.toString(),
       );
     }).toList();
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return SfCalendar(
       view: CalendarView.day,
@@ -68,6 +77,32 @@ class DayView extends StatelessWidget {
       ),
       firstDayOfWeek: DateTime.monday,
       todayHighlightColor: Theme.of(context).primaryColor,
+
+      // 👇 Handle taps on appointments for editing
+      onTap: (CalendarTapDetails details) async {
+        if (details.appointments != null && details.appointments!.isNotEmpty) {
+          final tapped = details.appointments!.first;
+          final id = int.tryParse(tapped.notes ?? '');
+          if (id != null) {
+            final repo = EventRepository();
+            final events = await repo.getEventsInRange(tapped.startTime, tapped.endTime);
+            final event = events.firstWhere((e) => e.id == id);
+            final refresh = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NewEventPage(event: event)),
+            );
+            if (refresh == true && context.mounted) {
+              context.read<CalendarBloc>().add(LoadEvents(
+                from: context.read<CalendarBloc>().currentRange.start,
+                to: context.read<CalendarBloc>().currentRange.end,
+              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Changes applied')),
+              );
+            }
+          }
+        }
+      },
     );
   }
 }

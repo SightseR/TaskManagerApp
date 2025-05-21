@@ -31,7 +31,12 @@ class CalendarPage extends StatelessWidget {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.add),
-                    onPressed: () => Navigator.pushNamed(inner, '/new_event'),
+                    onPressed: () async {
+                      await Navigator.pushNamed(inner, '/new_event');
+                      // Reload the calendar after returning
+                      final bloc = inner.read<CalendarBloc>();
+                      bloc.add(LoadEvents(from: bloc.currentRange.start, to: bloc.currentRange.end));
+                    },
                   ),
                 ],
                 bottom: TabBar(
