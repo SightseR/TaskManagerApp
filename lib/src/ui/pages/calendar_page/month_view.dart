@@ -4,16 +4,19 @@ import '../../../models/event_model.dart';
 
 class MonthView extends StatelessWidget {
   final List<EventModel> events;
-  const MonthView({super.key, required this.events});
+  final DateTime date;
+  MonthView({
+    super.key,
+    required this.events,
+    DateTime? date,
+  })  : date = date ?? DateTime.now();
 
   DateTime get _startOfMonth {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, 1);
-  }
 
+    return DateTime(date.year, date.month, 1);
+  }
   DateTime get _endOfMonth {
-    final now = DateTime.now();
-    final nextMonth = DateTime(now.year, now.month + 1, 1);
+    final nextMonth = DateTime(date.year, date.month + 1, 1);
     return nextMonth.subtract(const Duration(seconds: 1));
   }
 

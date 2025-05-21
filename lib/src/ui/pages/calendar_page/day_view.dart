@@ -5,11 +5,15 @@ import '../../../models/event_model.dart';
 
 class DayView extends StatelessWidget {
   final List<EventModel> events;
-  const DayView({super.key, required this.events});
+  final DateTime date;
+  DayView({
+    super.key,
+    required this.events,
+    DateTime? date,
+  })  : date = date ?? DateTime.now();
   
   DateTime get _startOfDay {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
+    return DateTime(date.year, date.month, date.day);
   }
 
   DateTime get _endOfDay {
@@ -54,6 +58,9 @@ class DayView extends StatelessWidget {
     return SfCalendar(
       view: CalendarView.day,
       dataSource: _DayDataSource(_appointments),
+      allowViewNavigation: false,
+      allowDragAndDrop: true,
+      allowAppointmentResize: false,
       timeSlotViewSettings: TimeSlotViewSettings(
         startHour: _earliestHour,
         endHour: _latestHour,

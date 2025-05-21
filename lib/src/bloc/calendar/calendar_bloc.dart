@@ -42,6 +42,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         break;
     }
     currentRange = _calculateRange(ref, currentPeriod);
+    print('updated range for next: ${currentRange}');
     add(LoadEvents(from: currentRange.start, to: currentRange.end));
   }
 
@@ -60,6 +61,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         break;
     }
     currentRange = _calculateRange(ref, currentPeriod);
+    print('updated range for previous: ${currentRange}');
     add(LoadEvents(from: currentRange.start, to: currentRange.end));
   }
 

@@ -5,12 +5,16 @@ import '../../../models/event_model.dart';
 
 class WeekView extends StatelessWidget {
   final List<EventModel> events;
-  const WeekView({super.key, required this.events});
+  final DateTime date;
+  WeekView({
+    super.key,
+    required this.events,
+    DateTime? date,
+  })  : date = date ?? DateTime.now();
 
   DateTime get _startOfWeek {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - DateTime.monday));
+    return DateTime(date.year, date.month, date.day)
+        .subtract(Duration(days: date.weekday - DateTime.monday));
   }
 
   DateTime get _endOfWeek {

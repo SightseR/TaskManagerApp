@@ -6,11 +6,6 @@ class EventRepository {
 
   Future<List<EventModel>> getEventsInRange(DateTime from, DateTime to) async {
     final db = await _dbProvider.database;
-    print(from); print(to);
-    print(
-    await db.query(
-      'events'
-    ));
     final maps = await db.query(
       'events',
       where: 'start >= ? AND start <= ?',
