@@ -7,16 +7,13 @@ class EventListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final start = event.start;
-    final end = event.end;
-    final timeRange =
-        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}'
-        ' - '
-        '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+
+    final duration =
+        '${event.duration}';
 
     return ListTile(
-      title: Text(event.title),
-      subtitle: Text(timeRange),
+      title: Text(event.name),
+      subtitle: Text(duration),
     );
   }
 }

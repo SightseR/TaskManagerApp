@@ -37,12 +37,12 @@ class CalendarPage extends StatelessWidget {
                       await Navigator.pushNamed(inner, '/new_event');
                       // Reload the calendar after returning
                       final bloc = inner.read<CalendarBloc>();
-                      bloc.add(LoadEvents(from: bloc.currentRange.start, to: bloc.currentRange.end));
+                      bloc.add(LoadEvents());
                     },
                   ),
                 ],
                 bottom: TabBar(
-                  onTap: (i) => bloc.add(ChangeView(period: CalendarPeriod.values[i])),
+                  onTap: (i) => bloc.add(ChangeView(view: CalendarPeriod.values[i])),
                   tabs: const [
                     Tab(text: 'DAY'),
                     Tab(text: 'WEEK'),
@@ -57,12 +57,15 @@ class CalendarPage extends StatelessWidget {
                   } else if (state is CalendarError) {
                     return Center(child: Text('Error: \${state.message}'));
                   } else if (state is CalendarLoaded) {
+                    print('events');
+                    print(state.assignedEvents);
+                    print(state.unassignedEvents);
                     return TabBarView(
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        DayView(events: state.events),
-                        WeekView(events: state.events),
-                        MonthView(events: state.events),
+                        DayView(assignedEvents: state.assignedEvents, unassignedEvents: state.unassignedEvents),
+                        WeekView(assignedEvents: state.assignedEvents, unassignedEvents: state.unassignedEvents),
+                        MonthView(assignedEvents: state.assignedEvents, unassignedEvents: state.unassignedEvents),
                       ],
                     );
                   }

@@ -7,8 +7,14 @@ class CalendarLoading extends CalendarState {}
 
 class CalendarLoaded extends CalendarState {
   final CalendarPeriod view;
-  final List<EventModel> events;
-  CalendarLoaded({required this.view, required this.events});
+  final List<EventModel> assignedEvents;
+  final List<EventModel> unassignedEvents;
+
+  CalendarLoaded({
+    required this.view,
+    required this.assignedEvents,
+    required this.unassignedEvents,
+  });
 }
 
 class CalendarError extends CalendarState {

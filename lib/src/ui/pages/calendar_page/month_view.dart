@@ -8,11 +8,13 @@ import '../../../bloc/calendar/calendar_bloc.dart';
 import '../../../bloc/calendar/calendar_event.dart';
 
 class MonthView extends StatelessWidget {
-  final List<EventModel> events;
+  final List<EventModel> assignedEvents;
+  final List<EventModel> unassignedEvents;
   final DateTime date;
   MonthView({
     super.key,
-    required this.events,
+    required this.assignedEvents,
+    required this.unassignedEvents,
     DateTime? date,
   })  : date = date ?? DateTime.now();
 
@@ -26,18 +28,24 @@ class MonthView extends StatelessWidget {
   }
 
   List<EventModel> get _monthEvents {
-    return events.where((e) {
-      return e.end.isAfter(_startOfMonth.subtract(const Duration(seconds: 1))) &&
-             e.start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
+    return assignedEvents.where((e) {
+      final start = e.startDate!; // assignedEvents all have a startDate
+      final end = start.add(e.duration);
+
+      return end.isAfter(_startOfMonth.subtract(const Duration(seconds: 1))) &&
+            start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
     }).toList();
   }
 
+
   List<Appointment> _getAppointments() {
     return _monthEvents.map((e) {
+      final start = e.startDate!; // _monthEvents(assignedEvents) all have a startDate
+      final end = start.add(e.duration);
       return Appointment(
-        startTime: e.start,
-        endTime: e.end,
-        subject: e.title,
+        startTime: start,
+        endTime: end,
+        subject: e.name,
         notes: e.id.toString(),
       );
     }).toList();
@@ -60,7 +68,7 @@ class MonthView extends StatelessWidget {
           final id = int.tryParse(tapped.notes ?? '');
           if (id != null) {
             final repo = EventRepository();
-            final events = await repo.getEventsInRange(tapped.startTime, tapped.endTime);
+            final events = await repo.getAssignedEvents();
             final event = events.firstWhere((e) => e.id == id);
             final refresh = await Navigator.push(
               context,
@@ -68,8 +76,6 @@ class MonthView extends StatelessWidget {
             );
             if (refresh == true && context.mounted) {
               context.read<CalendarBloc>().add(LoadEvents(
-                from: context.read<CalendarBloc>().currentRange.start,
-                to: context.read<CalendarBloc>().currentRange.end,
               ));
               ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Changes applied')),

@@ -8,21 +8,17 @@ abstract class CalendarEvent extends Equatable {
 }
 
 class ChangeView extends CalendarEvent {
-  final CalendarPeriod period;
-  const ChangeView({required this.period});
+  final CalendarPeriod view;
+  const ChangeView({required this.view});
 
   @override
-  List<Object?> get props => [period];
+  List<Object?> get props => [view];
 }
 
 class LoadEvents extends CalendarEvent {
-  final DateTime from;
-  final DateTime to;
-  const LoadEvents({required this.from, required this.to});
+  const LoadEvents();
 
   @override
-  List<Object?> get props => [from, to];
+  List<Object?> get props => [];
 }
 
-class NextPeriod extends CalendarEvent {}
-class PreviousPeriod extends CalendarEvent {}

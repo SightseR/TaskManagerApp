@@ -10,10 +10,15 @@ import '../../../bloc/calendar/calendar_event.dart';
 import '../../../widgets/event_list_tile.dart';
 
 class DayView extends StatefulWidget {
-  final List<EventModel> events;
+  final List<EventModel> assignedEvents;
+  final List<EventModel> unassignedEvents;
   final DateTime date;
-  DayView({super.key, required this.events, DateTime? date})
-    : date = date ?? DateTime.now();
+  DayView({
+    super.key,
+    required this.assignedEvents,
+    required this.unassignedEvents,
+    DateTime? date,
+  })  : date = date ?? DateTime.now();
 
   @override
   State<DayView> createState() => _DayViewState();
@@ -24,13 +29,14 @@ class _DayViewState extends State<DayView> {
   bool _showList = false;
   bool _dragging = false;
   late DateTime _selectedDate;
-  late List<EventModel> _events;
-  late List<EventModel> _selectedEvents;
+  late List<EventModel> _unassignedEvents;
+  late List<EventModel> _assignedEvents;
 
   @override
   void initState() {
     super.initState();
-    _events = List<EventModel>.from(widget.events);
+    _assignedEvents = List<EventModel>.from(widget.assignedEvents);
+    _unassignedEvents = List<EventModel>.from(widget.unassignedEvents);
     _selectedDate = DateTime(
       widget.date.year,
       widget.date.month,
@@ -48,30 +54,31 @@ class _DayViewState extends State<DayView> {
     final endOfDay = startOfDay
         .add(const Duration(days: 1))
         .subtract(const Duration(seconds: 1));
-    _selectedEvents =
-        _events.where((e) {
-          return e.end.isAfter(startOfDay) && e.start.isBefore(endOfDay);
+    _assignedEvents =
+        _assignedEvents.where((e) {
+          return e.startDate!.add(e.duration).isAfter(startOfDay) && e.startDate!.isBefore(endOfDay);
         }).toList();
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-        final double startHour = _events.isEmpty
-        ? 0
+        final double startHour = _assignedEvents.isEmpty
+        ? 6
         : math.min(
-            0,
-            _events
-                .map((e) => e.start.hour + e.start.minute / 60)
+            6,
+            _assignedEvents
+                .map((e) => e.startDate!.hour + e.startDate!.minute / 60)
                 .reduce(math.min)
                 .floorToDouble(),
           );
-    final double endHour = _events.isEmpty
-        ? 24
+    final double endHour = _assignedEvents.isEmpty
+        ? 20
         : math.max(
             20,
-            _events
-                .map((e) => e.end.hour + e.end.minute / 60)
+            _assignedEvents
+                .map((e) => e.startDate!.add(e.duration).hour 
+                          + e.startDate!.add(e.duration).minute / 60)
                 .reduce(math.max)
                 .ceilToDouble(),
           );
@@ -91,11 +98,11 @@ class _DayViewState extends State<DayView> {
                   view: sfcal.CalendarView.day,
                   initialDisplayDate: _selectedDate,
                   dataSource: _DataSource(
-                    _events.map((e) {
+                    _assignedEvents.map((e) {
                       return sfcal.Appointment(
-                        startTime: e.start,
-                        endTime: e.end,
-                        subject: e.title,
+                        startTime: e.startDate!,
+                        endTime: e.startDate!.add(e.duration),
+                        subject: e.name,
                         notes: e.id.toString(),
                       );
                     }).toList(),
@@ -129,10 +136,7 @@ class _DayViewState extends State<DayView> {
                       final id = int.tryParse(tapped.notes ?? '');
                       if (id != null) {
                         final repo = EventRepository();
-                        final events = await repo.getEventsInRange(
-                          tapped.startTime,
-                          tapped.endTime,
-                        );
+                        final events = await repo.getAssignedEvents();
                         final event = events.firstWhere((e) => e.id == id);
                         final refresh = await Navigator.push(
                           context,
@@ -142,11 +146,7 @@ class _DayViewState extends State<DayView> {
                         );
                         if (refresh == true && context.mounted) {
                           context.read<CalendarBloc>().add(
-                            LoadEvents(
-                              from:
-                                  context.read<CalendarBloc>().currentRange.start,
-                              to: context.read<CalendarBloc>().currentRange.end,
-                            ),
+                            LoadEvents(),
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Changes applied')),
@@ -185,25 +185,24 @@ class _DayViewState extends State<DayView> {
                         'Dropped at global $global, local $local, calculated $calculated',
                       );
             
-                      final duration = event.end.difference(event.start);
                       final updated = EventModel(
                         id: event.id,
-                        title: event.title,
-                        start: calculated,
-                        end: calculated.add(duration),
+                        name: event.name,
+                        startDate: calculated,
+                        duration: event.duration, 
+                        category: event.category, 
+                        type: event.type,
                       );
-                      final idx = _events.indexWhere((e) => e.id == updated.id);
+                      final idx = _unassignedEvents.indexWhere((e) => e.id == updated.id);
+                      
                       if (idx != -1)
-                        _events[idx] = updated;
+                        _unassignedEvents.removeAt(idx);
                       else
-                        _events.add(updated);
+                        _assignedEvents.add(updated);
                       setState(() {});
                       await EventRepository().updateEvent(updated);
                       context.read<CalendarBloc>().add(
-                        LoadEvents(
-                          from: context.read<CalendarBloc>().currentRange.start,
-                          to: context.read<CalendarBloc>().currentRange.end,
-                        ),
+                        LoadEvents(),
                       );
                       _updateSelectedEvents();
                     },
@@ -224,9 +223,11 @@ class _DayViewState extends State<DayView> {
           Expanded(
             flex: 1,
             child: ListView.builder(
-              itemCount: _selectedEvents.length,
+              itemCount: _unassignedEvents.length,
               itemBuilder: (context, index) {
-                final ev = _selectedEvents[index];
+                final ev = _unassignedEvents[index];
+                print('ev');
+                print(ev);
                 return Draggable<EventModel>(
                   data: ev,
                   onDragStarted: () => setState(() => _dragging = true),

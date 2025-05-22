@@ -9,11 +9,13 @@ import '../../../bloc/calendar/calendar_bloc.dart';
 import '../../../bloc/calendar/calendar_event.dart';
 
 class WeekView extends StatelessWidget {
-  final List<EventModel> events;
+  final List<EventModel> assignedEvents;
+  final List<EventModel> unassignedEvents;
   final DateTime date;
   WeekView({
     super.key,
-    required this.events,
+    required this.assignedEvents,
+    required this.unassignedEvents,
     DateTime? date,
   })  : date = date ?? DateTime.now();
 
@@ -27,15 +29,15 @@ class WeekView extends StatelessWidget {
   }
 
   List<EventModel> get _weekEvents {
-    return events.where((e) {
-      return !e.start.isBefore(_startOfWeek) && e.start.isBefore(_endOfWeek);
+    return assignedEvents.where((e) {
+      return !e.startDate!.isBefore(_startOfWeek) && e.startDate!.isBefore(_endOfWeek);
     }).toList();
   }
 
   double get _earliestStartHour {
     if (_weekEvents.isEmpty) return 0;
     final mins = _weekEvents
-        .map((e) => e.start.hour + e.start.minute / 60.0)
+        .map((e) => e.startDate!.hour + e.startDate!.minute / 60.0)
         .reduce(math.min);
     return mins.floorToDouble();
   }
@@ -43,7 +45,8 @@ class WeekView extends StatelessWidget {
   double get _latestEndHour {
     if (_weekEvents.isEmpty) return 24;
     final maxs = _weekEvents
-        .map((e) => e.end.hour + e.end.minute / 60.0)
+        .map((e) => e.startDate!.add(e.duration).hour 
+                  + e.startDate!.add(e.duration).minute / 60.0)
         .reduce(math.max);
     return maxs.ceilToDouble();
   }
@@ -51,10 +54,12 @@ class WeekView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appointments = _weekEvents.map((e) {
+      final start = e.startDate!; 
+      final end = start.add(e.duration);
       return Appointment(
-        startTime: e.start,
-        endTime: e.end,
-        subject: e.title,
+        startTime: start,
+        endTime: end,
+        subject: e.name,
         notes: e.id.toString(),
       );
     }).toList();
@@ -62,6 +67,7 @@ class WeekView extends StatelessWidget {
     return SfCalendar(
       view: CalendarView.week,
       firstDayOfWeek: 1,
+      controller: CalendarController(),
       dataSource: _EventDataSource(appointments),
       timeSlotViewSettings: TimeSlotViewSettings(
         timeRulerSize: -1,
@@ -75,17 +81,14 @@ class WeekView extends StatelessWidget {
           final id = int.tryParse(tapped.notes ?? '');
           if (id != null) {
             final repo = EventRepository();
-            final events = await repo.getEventsInRange(tapped.startTime, tapped.endTime);
+            final events = await repo.getAssignedEvents();
             final event = events.firstWhere((e) => e.id == id);
             final refresh = await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => NewEventPage(event: event)),
             );
             if (refresh == true && context.mounted) {
-              context.read<CalendarBloc>().add(LoadEvents(
-                from: context.read<CalendarBloc>().currentRange.start,
-                to: context.read<CalendarBloc>().currentRange.end,
-              ));
+              context.read<CalendarBloc>().add(LoadEvents());
               ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Changes applied')),
               );
