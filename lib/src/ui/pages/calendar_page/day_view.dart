@@ -98,7 +98,7 @@ void didUpdateWidget(covariant DayView old) {
 
   @override
   Widget build(BuildContext context) {
-        final double startHour = _assignedEvents.isEmpty
+    final double startHour = _assignedEvents.isEmpty
         ? 6
         : math.min(
             6,
@@ -107,22 +107,24 @@ void didUpdateWidget(covariant DayView old) {
                 .reduce(math.min)
                 .floorToDouble(),
           );
+
     final double endHour = _assignedEvents.isEmpty
         ? 20
         : math.max(
             20,
             _assignedEvents
-                .map((e) => e.startDate!.add(e.duration).hour 
-                          + e.startDate!.add(e.duration).minute / 60)
+                .map((e) => e.startDate!.add(e.duration).hour +
+                            e.startDate!.add(e.duration).minute / 60)
                 .reduce(math.max)
                 .ceilToDouble(),
           );
+
     return Row(
       children: [
         Expanded(
           flex: 2,
           child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) { 
+            builder: (BuildContext context, BoxConstraints constraints) {
               final visibleHours = endHour - startHour + 5;
               final cellHeight = constraints.maxHeight / visibleHours;
           
@@ -255,8 +257,6 @@ void didUpdateWidget(covariant DayView old) {
               itemCount: _unassignedEvents.length,
               itemBuilder: (context, index) {
                 final ev = _unassignedEvents[index];
-                print('ev');
-                print(ev);
                 return Draggable<EventModel>(
                   data: ev,
                   onDragStarted: () => setState(() => _dragging = true),

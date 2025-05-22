@@ -7,6 +7,7 @@ import 'package:project_productivity/src/data/event_repository.dart';
 import 'package:project_productivity/src/ui/pages/calendar_page/calendar_page.dart';
 import 'package:project_productivity/src/ui/pages/new_event_page.dart';
 import 'package:project_productivity/src/ui/pages/settings_page.dart';
+import 'package:project_productivity/src/ui/pages/prioritization_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
             routes: {
               '/new_event': (context) => const NewEventPage(),
               '/settings': (context) => const SettingsPage(),
+              '/prioritize': (context) => const PrioritizationPage(),
             },
             home: CalendarPage(repo: repo),
           );
