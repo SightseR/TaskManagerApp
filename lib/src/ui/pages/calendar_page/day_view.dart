@@ -184,21 +184,26 @@ class _DayViewState extends State<DayView> {
                       print(
                         'Dropped at global $global, local $local, calculated $calculated',
                       );
-            
+                      
                       final updated = EventModel(
                         id: event.id,
                         name: event.name,
                         startDate: calculated,
                         duration: event.duration, 
+                        deadline: event.deadline,
                         category: event.category, 
+                        priority: event.priority,
                         type: event.type,
                       );
+                      print('updated');
+                      print(updated.startDate);
                       final idx = _unassignedEvents.indexWhere((e) => e.id == updated.id);
                       
-                      if (idx != -1)
+                      if (idx != -1) {
                         _unassignedEvents.removeAt(idx);
-                      else
+                      } else {
                         _assignedEvents.add(updated);
+                      }
                       setState(() {});
                       await EventRepository().updateEvent(updated);
                       context.read<CalendarBloc>().add(

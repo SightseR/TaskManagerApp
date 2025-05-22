@@ -77,46 +77,46 @@ class DatabaseProvider {
         END;
       ''');
         // Seed sample data
-        final now = DateTime.now();
-        await db.insert('events', {
-          'name': 'Meeting mit Team',
-          'category': '@uncategorized',
-          'start_date': now.subtract(Duration(days: 1)).toIso8601String(),
-          'deadline':
-              now
-                  .subtract(Duration(days: 1))
-                  .add(Duration(hours: 1))
-                  .toIso8601String(),
-          'duration_ms': Duration(hours: 1).inMilliseconds,
-          'priority': null,
-          'type': 'base',
-        });
-        await db.insert('events', {
-          'name': 'Projekt-Deadline',
-          'category': '@uncategorized',
-          'start_date': now.add(Duration(days: 2)).toIso8601String(),
-          'deadline':
-              now
-                  .add(Duration(days: 2))
-                  .add(Duration(hours: 2))
-                  .toIso8601String(),
-          'duration_ms': Duration(hours: 2).inMilliseconds,
-          'priority': null,
-          'type': 'base',
-        });
-        await db.insert('events', {
-          'name': 'Arzttermin',
-          'category': '@uncategorized',
-          'start_date': now.add(Duration(days: 3)).toIso8601String(),
-          'deadline':
-              now
-                  .add(Duration(days: 3))
-                  .add(Duration(minutes: 30))
-                  .toIso8601String(),
-          'duration_ms': Duration(minutes: 30).inMilliseconds,
-          'priority': null,
-          'type': 'base',
-        });
+        // final now = DateTime.now();
+        // await db.insert('events', {
+        //   'name': 'Meeting mit Team',
+        //   'category': '@uncategorized',
+        //   'start_date': now.subtract(Duration(days: 1)).toIso8601String(),
+        //   'deadline':
+        //       now
+        //           .subtract(Duration(days: 1))
+        //           .add(Duration(hours: 1))
+        //           .toIso8601String(),
+        //   'duration_ms': Duration(hours: 1).inMilliseconds,
+        //   'priority': null,
+        //   'type': 'base',
+        // });
+        // await db.insert('events', {
+        //   'name': 'Projekt-Deadline',
+        //   'category': '@uncategorized',
+        //   'start_date': now.add(Duration(days: 2)).toIso8601String(),
+        //   'deadline':
+        //       now
+        //           .add(Duration(days: 2))
+        //           .add(Duration(hours: 2))
+        //           .toIso8601String(),
+        //   'duration_ms': Duration(hours: 2).inMilliseconds,
+        //   'priority': null,
+        //   'type': 'base',
+        // });
+        // await db.insert('events', {
+        //   'name': 'Arzttermin',
+        //   'category': '@uncategorized',
+        //   'start_date': now.add(Duration(days: 3)).toIso8601String(),
+        //   'deadline':
+        //       now
+        //           .add(Duration(days: 3))
+        //           .add(Duration(minutes: 30))
+        //           .toIso8601String(),
+        //   'duration_ms': Duration(minutes: 30).inMilliseconds,
+        //   'priority': null,
+        //   'type': 'base',
+        // });
       },
     );
     return _database!;

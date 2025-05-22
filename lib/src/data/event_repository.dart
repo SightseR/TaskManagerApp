@@ -130,7 +130,8 @@ class EventRepository {
       } else {
         type = 'base';
       }
-
+      print('update event from ${event.type} to $type');
+      print('update has ${event.startDate}');
       // Update main event row
       await txn.update(
         'events',
