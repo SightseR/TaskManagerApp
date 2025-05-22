@@ -19,7 +19,7 @@ class CalendarPage extends StatelessWidget {
       create: (_) => CalendarBloc(repository: repo),
       child: DefaultTabController(
         length: 3,
-        initialIndex: 1,
+        initialIndex: 0,
         child: Builder(
           builder: (inner) {
             final bloc = inner.read<CalendarBloc>();

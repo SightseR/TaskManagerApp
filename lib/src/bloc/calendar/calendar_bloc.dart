@@ -8,7 +8,7 @@ enum CalendarPeriod { day, week, month }
 
 class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   final EventRepository repository;
-  CalendarPeriod currentPeriod = CalendarPeriod.week;
+  CalendarPeriod currentPeriod = CalendarPeriod.day;
   late DateTimeRange currentRange;
 
   CalendarBloc({required this.repository}) : super(CalendarLoading()) {

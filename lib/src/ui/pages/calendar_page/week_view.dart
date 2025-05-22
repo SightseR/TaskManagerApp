@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_productivity/src/widgets/event_list_tile.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../models/event_model.dart';
 import '../../../data/event_repository.dart';
@@ -60,6 +61,7 @@ class WeekView extends StatelessWidget {
         startTime: start,
         endTime: end,
         subject: e.name,
+        color: priorityColor(e.priority),
         notes: e.id.toString(),
       );
     }).toList();

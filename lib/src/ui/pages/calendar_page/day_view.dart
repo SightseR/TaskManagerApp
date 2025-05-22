@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart' as sfcal;
 import '../../../models/event_model.dart';
@@ -25,41 +26,75 @@ class DayView extends StatefulWidget {
 }
 
 class _DayViewState extends State<DayView> {
+  late _DataSource _dataSource;
+  final _repo = EventRepository();
   final GlobalKey _calendarKey = GlobalKey();
   bool _showList = false;
   bool _dragging = false;
   late DateTime _selectedDate;
   late List<EventModel> _unassignedEvents;
   late List<EventModel> _assignedEvents;
+    Future<void> _loadAppointments() async {
+    final events = await _repo.getAssignedEvents();
+    final apps = events.map((e) => sfcal.Appointment(
+      startTime: e.startDate!,
+      endTime:   e.startDate!.add(e.duration),
+      subject:   e.name,
+      color:     priorityColor(e.priority),
+      notes:     e.id.toString(),
+    )).toList();
 
+    // update the existing data source
+    _dataSource.appointments = apps;
+    // tell the calendar to re-draw everything
+    _dataSource.notifyListeners(
+      sfcal.CalendarDataSourceAction.reset, 
+      apps,
+    );
+  }
   @override
   void initState() {
     super.initState();
     _assignedEvents = List<EventModel>.from(widget.assignedEvents);
-    _unassignedEvents = List<EventModel>.from(widget.unassignedEvents);
+    _unassignedEvents = List<EventModel>.from(widget.unassignedEvents)
+  ..sort((a, b) {
+    // 1) sort by priority (lower number = higher priority)
+    final p = a.priority!.compareTo(b.priority!);
+    if (p != 0) return p;
+    // 2) then by deadline (earlier first)
+    return a.deadline!.compareTo(b.deadline!);
+  });
     _selectedDate = DateTime(
       widget.date.year,
       widget.date.month,
       widget.date.day,
     );
-    _updateSelectedEvents();
+    _dataSource = _DataSource([]);
+    _loadAppointments();
   }
+  @override
+void didUpdateWidget(covariant DayView old) {
+  super.didUpdateWidget(old);
+  // Wenn der Parent neue Events reingibt:
+  if (!listEquals(old.assignedEvents, widget.assignedEvents)) {
+    _assignedEvents = List.from(widget.assignedEvents);
+    final apps = _assignedEvents.map((e) => sfcal.Appointment(
+      startTime: e.startDate!,
+      endTime:   e.startDate!.add(e.duration),
+      subject:   e.name,
+      color:     priorityColor(e.priority),
+      notes:     e.id.toString(),
+    )).toList();
 
-  void _updateSelectedEvents() {
-    final startOfDay = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
+    // DataSource updaten und Calendar neu zeichnen
+    _dataSource.appointments = apps;
+    _dataSource.notifyListeners(
+      sfcal.CalendarDataSourceAction.reset,
+      apps,
     );
-    final endOfDay = startOfDay
-        .add(const Duration(days: 1))
-        .subtract(const Duration(seconds: 1));
-    _assignedEvents =
-        _assignedEvents.where((e) {
-          return e.startDate!.add(e.duration).isAfter(startOfDay) && e.startDate!.isBefore(endOfDay);
-        }).toList();
-    setState(() {});
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +132,7 @@ class _DayViewState extends State<DayView> {
                   key: _calendarKey,
                   view: sfcal.CalendarView.day,
                   initialDisplayDate: _selectedDate,
-                  dataSource: _DataSource(
-                    _assignedEvents.map((e) {
-                      return sfcal.Appointment(
-                        startTime: e.startDate!,
-                        endTime: e.startDate!.add(e.duration),
-                        subject: e.name,
-                        notes: e.id.toString(),
-                      );
-                    }).toList(),
-                  ),
+                  dataSource: _dataSource,
                   allowDragAndDrop: false,
                   allowAppointmentResize: false,
                   allowViewNavigation: false,
@@ -124,7 +150,6 @@ class _DayViewState extends State<DayView> {
                           details.date!.month,
                           details.date!.day,
                         );
-                        _updateSelectedEvents();
                         _showList = !_showList;
                       });
                     }
@@ -209,7 +234,6 @@ class _DayViewState extends State<DayView> {
                       context.read<CalendarBloc>().add(
                         LoadEvents(),
                       );
-                      _updateSelectedEvents();
                     },
                     builder:
                         (ctx, cand, rej) =>
