@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_productivity/src/bloc/calendar/calendar_bloc.dart';
 import 'package:project_productivity/src/bloc/calendar/calendar_event.dart';
 import 'package:project_productivity/src/bloc/calendar/calendar_state.dart';
-import 'package:project_productivity/src/ui/pages/calendar_page/period_pager.dart';
+import 'package:project_productivity/src/ui/pages/calendar_page/day_view.dart';
+import 'package:project_productivity/src/ui/pages/calendar_page/month_view.dart';
+import 'package:project_productivity/src/ui/pages/calendar_page/week_view.dart';
 import '../../../data/event_repository.dart';
 import '../../../widgets/loading_indicator.dart';
 
@@ -58,9 +60,9 @@ class CalendarPage extends StatelessWidget {
                     return TabBarView(
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        PeriodPager(period: CalendarPeriod.day),
-                        PeriodPager(period: CalendarPeriod.week),
-                        PeriodPager(period: CalendarPeriod.month),
+                        DayView(events: state.events),
+                        WeekView(events: state.events),
+                        MonthView(events: state.events),
                       ],
                     );
                   }

@@ -1,114 +1,263 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart' as sfcal;
 import '../../../models/event_model.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // ✅ needed for context.read
-import 'package:syncfusion_flutter_calendar/calendar.dart';
-import '../../../models/event_model.dart';
-import '../../../data/event_repository.dart'; // ✅ needed to fetch event by ID
-import '../new_event_page.dart'; // ✅ needed to navigate to NewEventPage
-import '../../../bloc/calendar/calendar_bloc.dart'; // ✅ to dispatch LoadEvents
-import '../../../bloc/calendar/calendar_event.dart'; // ✅ to use LoadEvents
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../data/event_repository.dart';
+import '../new_event_page.dart';
+import '../../../bloc/calendar/calendar_bloc.dart';
+import '../../../bloc/calendar/calendar_event.dart';
+import '../../../widgets/event_list_tile.dart';
 
-
-class DayView extends StatelessWidget {
+class DayView extends StatefulWidget {
   final List<EventModel> events;
   final DateTime date;
-  DayView({
-    super.key,
-    required this.events,
-    DateTime? date,
-  })  : date = date ?? DateTime.now();
-  
-  DateTime get _startOfDay {
-    return DateTime(date.year, date.month, date.day);
+  DayView({super.key, required this.events, DateTime? date})
+    : date = date ?? DateTime.now();
+
+  @override
+  State<DayView> createState() => _DayViewState();
+}
+
+class _DayViewState extends State<DayView> {
+  final GlobalKey _calendarKey = GlobalKey();
+  bool _showList = false;
+  bool _dragging = false;
+  late DateTime _selectedDate;
+  late List<EventModel> _events;
+  late List<EventModel> _selectedEvents;
+
+  @override
+  void initState() {
+    super.initState();
+    _events = List<EventModel>.from(widget.events);
+    _selectedDate = DateTime(
+      widget.date.year,
+      widget.date.month,
+      widget.date.day,
+    );
+    _updateSelectedEvents();
   }
 
-  DateTime get _endOfDay {
-    return _startOfDay.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
+  void _updateSelectedEvents() {
+    final startOfDay = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+    );
+    final endOfDay = startOfDay
+        .add(const Duration(days: 1))
+        .subtract(const Duration(seconds: 1));
+    _selectedEvents =
+        _events.where((e) {
+          return e.end.isAfter(startOfDay) && e.start.isBefore(endOfDay);
+        }).toList();
+    setState(() {});
   }
 
-  List<EventModel> get _dayEvents {
-    return events.where((e) {
-      return e.end.isAfter(_startOfDay.subtract(const Duration(seconds: 1))) &&
-             e.start.isBefore(_endOfDay.add(const Duration(seconds: 1)));
-    }).toList();
-  }
-
-  double get _earliestHour {
-    if (_dayEvents.isEmpty) return 0;
-    final earliest = _dayEvents
-        .map((e) => e.start.hour + e.start.minute / 60.0)
-        .reduce(math.min);
-    return earliest.floorToDouble();
-  }
-
-  double get _latestHour {
-    if (_dayEvents.isEmpty) return 24;
-    final latest = _dayEvents
-        .map((e) => e.end.hour + e.end.minute / 60.0)
-        .reduce(math.max);
-    return latest.ceilToDouble();
-  }
-
-  List<Appointment> get _appointments {
-    return _dayEvents.map((e) {
-      return Appointment(
-        startTime: e.start,
-        endTime: e.end,
-        subject: e.title,
-        notes: e.id.toString(),
-      );
-    }).toList();
-  }
-
- @override
+  @override
   Widget build(BuildContext context) {
-    return SfCalendar(
-      view: CalendarView.day,
-      dataSource: _DayDataSource(_appointments),
-      allowViewNavigation: false,
-      allowDragAndDrop: true,
-      allowAppointmentResize: false,
-      timeSlotViewSettings: TimeSlotViewSettings(
-        startHour: _earliestHour,
-        endHour: _latestHour,
-        timeIntervalHeight: 30,
-      ),
-      firstDayOfWeek: DateTime.monday,
-      todayHighlightColor: Theme.of(context).primaryColor,
-
-      // 👇 Handle taps on appointments for editing
-      onTap: (CalendarTapDetails details) async {
-        if (details.appointments != null && details.appointments!.isNotEmpty) {
-          final tapped = details.appointments!.first;
-          final id = int.tryParse(tapped.notes ?? '');
-          if (id != null) {
-            final repo = EventRepository();
-            final events = await repo.getEventsInRange(tapped.startTime, tapped.endTime);
-            final event = events.firstWhere((e) => e.id == id);
-            final refresh = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => NewEventPage(event: event)),
+        final double startHour = _events.isEmpty
+        ? 0
+        : math.min(
+            0,
+            _events
+                .map((e) => e.start.hour + e.start.minute / 60)
+                .reduce(math.min)
+                .floorToDouble(),
+          );
+    final double endHour = _events.isEmpty
+        ? 24
+        : math.max(
+            20,
+            _events
+                .map((e) => e.end.hour + e.end.minute / 60)
+                .reduce(math.max)
+                .ceilToDouble(),
+          );
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) { 
+              final visibleHours = endHour - startHour + 5;
+              final cellHeight = constraints.maxHeight / visibleHours;
+          
+            return Stack(
+              children: [
+                sfcal.SfCalendar(
+                  key: _calendarKey,
+                  view: sfcal.CalendarView.day,
+                  initialDisplayDate: _selectedDate,
+                  dataSource: _DataSource(
+                    _events.map((e) {
+                      return sfcal.Appointment(
+                        startTime: e.start,
+                        endTime: e.end,
+                        subject: e.title,
+                        notes: e.id.toString(),
+                      );
+                    }).toList(),
+                  ),
+                  allowDragAndDrop: false,
+                  allowAppointmentResize: false,
+                  allowViewNavigation: false,
+                  timeSlotViewSettings: sfcal.TimeSlotViewSettings(
+                    startHour: startHour,
+                    endHour: endHour,
+                    timeIntervalHeight: cellHeight,
+                  ),
+                  firstDayOfWeek: DateTime.monday,
+                  onTap: (details) {
+                    if (!_dragging && details.date != null) {
+                      setState(() {
+                        _selectedDate = DateTime(
+                          details.date!.year,
+                          details.date!.month,
+                          details.date!.day,
+                        );
+                        _updateSelectedEvents();
+                        _showList = !_showList;
+                      });
+                    }
+                  },
+                  onLongPress: (sfcal.CalendarLongPressDetails details) async {
+                    if (details.appointments != null &&
+                        details.appointments!.isNotEmpty) {
+                      final tapped = details.appointments!.first;
+                      final id = int.tryParse(tapped.notes ?? '');
+                      if (id != null) {
+                        final repo = EventRepository();
+                        final events = await repo.getEventsInRange(
+                          tapped.startTime,
+                          tapped.endTime,
+                        );
+                        final event = events.firstWhere((e) => e.id == id);
+                        final refresh = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NewEventPage(event: event),
+                          ),
+                        );
+                        if (refresh == true && context.mounted) {
+                          context.read<CalendarBloc>().add(
+                            LoadEvents(
+                              from:
+                                  context.read<CalendarBloc>().currentRange.start,
+                              to: context.read<CalendarBloc>().currentRange.end,
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Changes applied')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+                Positioned.fill(
+                  child: DragTarget<EventModel>(
+                    onWillAcceptWithDetails: (_) => true,
+                    onAcceptWithDetails: (details) async {
+                      setState(() => _dragging = false);
+                      final event = details.data;
+                      final global = details.offset;
+                      final box =
+                          _calendarKey.currentContext!.findRenderObject()
+                              as RenderBox;
+                      final local = box.globalToLocal(global);
+            
+                      // Calculate drop time from local offset
+                      final hourOffset = local.dy / cellHeight;
+                      final totalHour = startHour + hourOffset - 2;
+                      final int h = totalHour.floor();
+                      final int m = ((totalHour - h) * 60).round();
+                      final calculated = DateTime(
+                        _selectedDate.year,
+                        _selectedDate.month,
+                        _selectedDate.day,
+                        h,
+                        m - m % 15,
+                      );
+            
+                      print(
+                        'Dropped at global $global, local $local, calculated $calculated',
+                      );
+            
+                      final duration = event.end.difference(event.start);
+                      final updated = EventModel(
+                        id: event.id,
+                        title: event.title,
+                        start: calculated,
+                        end: calculated.add(duration),
+                      );
+                      final idx = _events.indexWhere((e) => e.id == updated.id);
+                      if (idx != -1)
+                        _events[idx] = updated;
+                      else
+                        _events.add(updated);
+                      setState(() {});
+                      await EventRepository().updateEvent(updated);
+                      context.read<CalendarBloc>().add(
+                        LoadEvents(
+                          from: context.read<CalendarBloc>().currentRange.start,
+                          to: context.read<CalendarBloc>().currentRange.end,
+                        ),
+                      );
+                      _updateSelectedEvents();
+                    },
+                    builder:
+                        (ctx, cand, rej) =>
+                            _dragging
+                                ? Container(color: Colors.transparent)
+                                : SizedBox.shrink(),
+                  ),
+                ),
+              ],
             );
-            if (refresh == true && context.mounted) {
-              context.read<CalendarBloc>().add(LoadEvents(
-                from: context.read<CalendarBloc>().currentRange.start,
-                to: context.read<CalendarBloc>().currentRange.end,
-              ));
-              ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Changes applied')),
-              );
-            }
-          }
-        }
-      },
+             },
+          ),
+        ),
+        if (_showList) ...[
+          const VerticalDivider(width: 1),
+          Expanded(
+            flex: 1,
+            child: ListView.builder(
+              itemCount: _selectedEvents.length,
+              itemBuilder: (context, index) {
+                final ev = _selectedEvents[index];
+                return Draggable<EventModel>(
+                  data: ev,
+                  onDragStarted: () => setState(() => _dragging = true),
+                  onDragEnd: (_) => setState(() => _dragging = false),
+                  feedback: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 300,
+                      maxHeight: 100,
+                    ),
+                    child: Material(
+                      elevation: 4,
+                      child: EventListTile(event: ev),
+                    ),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.5,
+                    child: EventListTile(event: ev),
+                  ),
+                  child: EventListTile(event: ev),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
 
-class _DayDataSource extends CalendarDataSource {
-  _DayDataSource(List<Appointment> source) {
+class _DataSource extends sfcal.CalendarDataSource {
+  _DataSource(List<sfcal.Appointment> source) {
     appointments = source;
   }
 }
