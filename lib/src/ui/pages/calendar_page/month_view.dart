@@ -12,17 +12,16 @@ class MonthView extends StatelessWidget {
   final List<EventModel> assignedEvents;
   final List<EventModel> unassignedEvents;
   final DateTime date;
+
   MonthView({
     super.key,
     required this.assignedEvents,
     required this.unassignedEvents,
     DateTime? date,
-  })  : date = date ?? DateTime.now();
+  }) : date = date ?? DateTime.now();
 
-  DateTime get _startOfMonth {
+  DateTime get _startOfMonth => DateTime(date.year, date.month, 1);
 
-    return DateTime(date.year, date.month, 1);
-  }
   DateTime get _endOfMonth {
     final nextMonth = DateTime(date.year, date.month + 1, 1);
     return nextMonth.subtract(const Duration(seconds: 1));
@@ -30,18 +29,21 @@ class MonthView extends StatelessWidget {
 
   List<EventModel> get _monthEvents {
     return assignedEvents.where((e) {
-      final start = e.startDate!; // assignedEvents all have a startDate
+      final start = e.startDate!;
       final end = start.add(e.duration);
-
       return end.isAfter(_startOfMonth.subtract(const Duration(seconds: 1))) &&
-            start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
+             start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
     }).toList();
   }
+  
 
+
+
+  
 
   List<Appointment> _getAppointments() {
-    return _monthEvents.map((e) {
-      final start = e.startDate!; // _monthEvents(assignedEvents) all have a startDate
+    return assignedEvents.map((e) {
+      final start = e.startDate!;
       final end = start.add(e.duration);
       return Appointment(
         startTime: start,
@@ -77,10 +79,9 @@ class MonthView extends StatelessWidget {
               MaterialPageRoute(builder: (_) => NewEventPage(event: event)),
             );
             if (refresh == true && context.mounted) {
-              context.read<CalendarBloc>().add(LoadEvents(
-              ));
+              context.read<CalendarBloc>().add(LoadEvents());
               ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Changes applied')),
+                const SnackBar(content: Text('Changes applied')),
               );
             }
           }

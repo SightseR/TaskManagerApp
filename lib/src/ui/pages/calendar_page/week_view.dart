@@ -13,12 +13,13 @@ class WeekView extends StatelessWidget {
   final List<EventModel> assignedEvents;
   final List<EventModel> unassignedEvents;
   final DateTime date;
+
   WeekView({
     super.key,
     required this.assignedEvents,
     required this.unassignedEvents,
     DateTime? date,
-  })  : date = date ?? DateTime.now();
+  }) : date = date ?? DateTime.now();
 
   DateTime get _startOfWeek {
     return DateTime(date.year, date.month, date.day)
@@ -46,16 +47,19 @@ class WeekView extends StatelessWidget {
   double get _latestEndHour {
     if (_weekEvents.isEmpty) return 24;
     final maxs = _weekEvents
-        .map((e) => e.startDate!.add(e.duration).hour 
-                  + e.startDate!.add(e.duration).minute / 60.0)
+        .map((e) => e.startDate!.add(e.duration).hour +
+            e.startDate!.add(e.duration).minute / 60.0)
         .reduce(math.max);
     return maxs.ceilToDouble();
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
     final appointments = _weekEvents.map((e) {
-      final start = e.startDate!; 
+      final start = e.startDate!;
       final end = start.add(e.duration);
       return Appointment(
         startTime: start,
@@ -92,7 +96,7 @@ class WeekView extends StatelessWidget {
             if (refresh == true && context.mounted) {
               context.read<CalendarBloc>().add(LoadEvents());
               ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Changes applied')),
+                const SnackBar(content: Text('Changes applied')),
               );
             }
           }
