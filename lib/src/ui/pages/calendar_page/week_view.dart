@@ -12,12 +12,13 @@ class WeekView extends StatelessWidget {
   final List<EventModel> assignedEvents;
   final List<EventModel> unassignedEvents;
   final DateTime date;
+
   WeekView({
     super.key,
     required this.assignedEvents,
     required this.unassignedEvents,
     DateTime? date,
-  })  : date = date ?? DateTime.now();
+  }) : date = date ?? DateTime.now();
 
   DateTime get _startOfWeek {
     return DateTime(date.year, date.month, date.day)
@@ -45,22 +46,38 @@ class WeekView extends StatelessWidget {
   double get _latestEndHour {
     if (_weekEvents.isEmpty) return 24;
     final maxs = _weekEvents
-        .map((e) => e.startDate!.add(e.duration).hour 
-                  + e.startDate!.add(e.duration).minute / 60.0)
+        .map((e) => e.startDate!.add(e.duration).hour +
+            e.startDate!.add(e.duration).minute / 60.0)
         .reduce(math.max);
     return maxs.ceilToDouble();
+  }
+
+  Color _getColorForPriority(int? priority) {
+    switch (priority) {
+      case 1:
+        return Colors.redAccent;
+      case 2:
+        return Colors.orangeAccent;
+      case 3:
+        return Colors.amber;
+      case 4:
+        return Colors.grey;
+      default:
+        return Colors.blueGrey;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final appointments = _weekEvents.map((e) {
-      final start = e.startDate!; 
+      final start = e.startDate!;
       final end = start.add(e.duration);
       return Appointment(
         startTime: start,
         endTime: end,
         subject: e.name,
         notes: e.id.toString(),
+        color: _getColorForPriority(e.priority), // ✅ Color by priority
       );
     }).toList();
 
@@ -90,7 +107,7 @@ class WeekView extends StatelessWidget {
             if (refresh == true && context.mounted) {
               context.read<CalendarBloc>().add(LoadEvents());
               ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Changes applied')),
+                const SnackBar(content: Text('Changes applied')),
               );
             }
           }

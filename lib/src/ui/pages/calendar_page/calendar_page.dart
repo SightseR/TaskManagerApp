@@ -40,6 +40,12 @@ class CalendarPage extends StatelessWidget {
                       bloc.add(LoadEvents());
                     },
                   ),
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/prioritize');
+                      },
+                      child: const Text('Prioritization'),
+                    ),
                 ],
                 bottom: TabBar(
                   onTap: (i) => bloc.add(ChangeView(view: CalendarPeriod.values[i])),

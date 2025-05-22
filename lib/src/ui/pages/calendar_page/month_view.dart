@@ -11,17 +11,16 @@ class MonthView extends StatelessWidget {
   final List<EventModel> assignedEvents;
   final List<EventModel> unassignedEvents;
   final DateTime date;
+
   MonthView({
     super.key,
     required this.assignedEvents,
     required this.unassignedEvents,
     DateTime? date,
-  })  : date = date ?? DateTime.now();
+  }) : date = date ?? DateTime.now();
 
-  DateTime get _startOfMonth {
+  DateTime get _startOfMonth => DateTime(date.year, date.month, 1);
 
-    return DateTime(date.year, date.month, 1);
-  }
   DateTime get _endOfMonth {
     final nextMonth = DateTime(date.year, date.month + 1, 1);
     return nextMonth.subtract(const Duration(seconds: 1));
@@ -29,24 +28,38 @@ class MonthView extends StatelessWidget {
 
   List<EventModel> get _monthEvents {
     return assignedEvents.where((e) {
-      final start = e.startDate!; // assignedEvents all have a startDate
+      final start = e.startDate!;
       final end = start.add(e.duration);
-
       return end.isAfter(_startOfMonth.subtract(const Duration(seconds: 1))) &&
-            start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
+             start.isBefore(_endOfMonth.add(const Duration(seconds: 1)));
     }).toList();
   }
 
+  Color _getColorForPriority(int? priority) {
+    switch (priority) {
+      case 1:
+        return Colors.redAccent;
+      case 2:
+        return Colors.orangeAccent;
+      case 3:
+        return Colors.amber;
+      case 4:
+        return Colors.grey;
+      default:
+        return Colors.blueGrey;
+    }
+  }
 
   List<Appointment> _getAppointments() {
     return _monthEvents.map((e) {
-      final start = e.startDate!; // _monthEvents(assignedEvents) all have a startDate
+      final start = e.startDate!;
       final end = start.add(e.duration);
       return Appointment(
         startTime: start,
         endTime: end,
         subject: e.name,
         notes: e.id.toString(),
+        color: _getColorForPriority(e.priority), // ✅ Apply color here
       );
     }).toList();
   }
@@ -75,10 +88,9 @@ class MonthView extends StatelessWidget {
               MaterialPageRoute(builder: (_) => NewEventPage(event: event)),
             );
             if (refresh == true && context.mounted) {
-              context.read<CalendarBloc>().add(LoadEvents(
-              ));
+              context.read<CalendarBloc>().add(LoadEvents());
               ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Changes applied')),
+                const SnackBar(content: Text('Changes applied')),
               );
             }
           }

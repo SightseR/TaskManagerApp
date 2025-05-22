@@ -131,8 +131,7 @@ class _NewEventPageState extends State<NewEventPage> {
       deadline:  _deadline,
       duration:  duration,
       subtasks:  widget.event?.subtasks,
-      priority:  
-      1,
+      priority:  _isNew ? null : null,
       // widget.event?.priority,
     );
 
